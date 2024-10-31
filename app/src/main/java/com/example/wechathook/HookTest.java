@@ -16,13 +16,17 @@ public class HookTest implements IXposedHookLoadPackage {
         Log.i("Demo: hookListView", loadPackageParam.packageName);
         if (loadPackageParam.packageName.equals("com.tencent.mm")) {
             XposedBridge.log("Demo: hookListView");
+            XposedBridge.log("com.tencent.mm");
             Class clazz = loadPackageParam.classLoader.loadClass("com.tencent.mm.ui.conversation.ConversationListView");
             // 确保使用正确的类名
             XposedHelpers.findAndHookMethod(
-                    "com.tencent.mm.ui.conversation.ConversationListView",
-                    loadPackageParam.classLoader,
-                    "setAdapter",
-                    ListView.class,
+//                    "com.tencent.mm.ui.conversation.ConversationListView",
+//                    loadPackageParam.classLoader,
+//                    "setAdapter",
+//                    ListView.class,
+                    clazz,
+                    "smoothScrollToPositionFromTop",
+                    int.class, int.class,
                     new XC_MethodHook() {
                 protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
                     super.beforeHookedMethod(param);
