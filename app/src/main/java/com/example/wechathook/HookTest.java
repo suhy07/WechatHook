@@ -92,12 +92,24 @@ public class HookTest implements IXposedHookLoadPackage {
                         @Override
                         protected void afterHookedMethod(MethodHookParam param) throws Throwable {
                             super.afterHookedMethod(param);
-                            int count = adapter.getCount();
-                            showToast("listview has " + count + " child");
-                            for (int i = 0; i < count; i++) {
-                                Object s = adapter.getItem(i);
-                                showToast("item data -> " + JSONObject.toJSONString(s));
-                            }
+                            XposedHelpers.findAndHookMethod("com.tencent.mm.ui.chatting.ChattingUIFragment", classLoader, "doResume", new XC_MethodHook() {
+                                @Override
+                                protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                                    // 在onResume方法执行之前执行的代码
+                                    int count = adapter.getCount();
+                                    showToast("listview has " + count + " child");
+                                    for (int i = 0; i < count; i++) {
+                                        Object s = adapter.getItem(i);
+                                        showToast("item data -> " + JSONObject.toJSONString(s));
+                                    }
+                                }
+
+                                @Override
+                                protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+                                    // 在onResume方法执行之后执行的代码
+
+                                }
+                            });
                         }
                     });
         }
