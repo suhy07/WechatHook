@@ -21,6 +21,7 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage;
 
 public class HookTest implements IXposedHookLoadPackage {
 
+    private static String TAG = "HOOK_TEST";
     private static Context context = null;
 
     @Override
@@ -101,6 +102,7 @@ public class HookTest implements IXposedHookLoadPackage {
                                     for (int i = 0; i < count; i++) {
                                         Object s = adapter.getItem(i);
                                         showToast("item data -> " + JSONObject.toJSONString(s));
+                                        Log.i(TAG, "item data -> " + JSONObject.toJSONString(s);
                                     }
                                 }
 
