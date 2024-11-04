@@ -2,7 +2,7 @@ package com.example.wechathook.global;
 
 public class GlobalMem {
 
-    public static GlobalMem instance = null;
+    private static GlobalMem instance = null;
 
     private GlobalMem() {}
 
@@ -10,7 +10,7 @@ public class GlobalMem {
         if (instance == null) {
             instance = new GlobalMem();
         }
-        return  instance;
+        return instance;
     }
 
     public static final String TAG = "LAB_SUHY_WECHATHOOK";
