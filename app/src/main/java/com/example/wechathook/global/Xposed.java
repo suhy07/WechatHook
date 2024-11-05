@@ -31,8 +31,21 @@ public class Xposed {
                            Consumer<XC_MethodHook.MethodHookParam> before,
                            Consumer<XC_MethodHook.MethodHookParam> after,
                            Object... parameterTypes) {
+        Class<?> clazz = null;
         try {
-            Class<?> clazz = classLoader.loadClass(className);
+            clazz = classLoader.loadClass(className);
+            hookMethod(clazz, methodName, before, after, parameterTypes);
+        } catch (Exception e) {
+            XposedBridge.log(e);
+        }
+    }
+
+    public void hookMethod(Class<?> clazz,
+                           String methodName,
+                           Consumer<XC_MethodHook.MethodHookParam> before,
+                           Consumer<XC_MethodHook.MethodHookParam> after,
+                           Object... parameterTypes) {
+        try {
             Object callback = new XC_MethodHook() {
                 @Override
                 protected void beforeHookedMethod(XC_MethodHook.MethodHookParam param) throws Throwable {
