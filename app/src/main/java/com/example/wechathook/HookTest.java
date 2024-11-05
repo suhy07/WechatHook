@@ -36,7 +36,7 @@ public class HookTest implements IXposedHookLoadPackage {
                         if (Wx.WX_APP_CONTEXT == null) {
                             Wx.WX_APP_CONTEXT = context;
                         }
-                        Wx.showToast("Toast 注入成功");
+                        Wx.showToast(context.getPackageCodePath() + " Toast 注入成功");
                     },
                     param -> {},
                     Context.class,
@@ -45,11 +45,15 @@ public class HookTest implements IXposedHookLoadPackage {
             );
 
             // Hook setAdapter method
-            Xposed.getInstance().hookMethod("com.tencent.mm.ui.chatting.view.MMChattingListView", lpparam.classLoader,
+            Xposed.getInstance().hookMethod(
+                    "com.tencent.mm.ui.chatting.view.MMChattingListView",
+                    lpparam.classLoader,
                     "setAdapter",
                     param -> {
                         ListAdapter adapter = (ListAdapter) param.args[0];
-                        Xposed.getInstance().hookMethod("com.tencent.mm.ui.chatting.ChattingUIFragment", lpparam.classLoader,
+                        Xposed.getInstance().hookMethod(
+                                "com.tencent.mm.ui.chatting.ChattingUIFragment",
+                                lpparam.classLoader,
                                 "doResume",
                                 param1 -> {
                                     // 在这里处理doResume的逻辑
@@ -61,9 +65,12 @@ public class HookTest implements IXposedHookLoadPackage {
                                         XposedBridge.log("item data -> " + JSONObject.toJSONString(item));
                                     }
                                 },
-                                param1 -> {});
+                                param1 -> {}
+                        );
                     },
-                    param -> {}, BaseAdapter.class);
+                    param -> {},
+                    BaseAdapter.class
+            );
         }
     }
 }

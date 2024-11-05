@@ -30,9 +30,10 @@ public class Xposed {
                            String methodName,
                            Consumer<XC_MethodHook.MethodHookParam> before,
                            Consumer<XC_MethodHook.MethodHookParam> after,
-                           Class<?>... parameterTypes){
+                           Object... parameterTypes) {
         try {
-            XC_MethodHook callback = new XC_MethodHook() {
+            Class<?> clazz = classLoader.loadClass(className);
+            Object callback = new XC_MethodHook() {
                 @Override
                 protected void beforeHookedMethod(XC_MethodHook.MethodHookParam param) throws Throwable {
                     super.beforeHookedMethod(param);
@@ -45,27 +46,48 @@ public class Xposed {
                     after.accept(param);
                 }
             };
-            Class clazz = classLoader.loadClass(className);
+            hookMethod(clazz, methodName, callback, parameterTypes);
+        } catch (Exception e) {
+            XposedBridge.log(e);
+        }
+    }
+
+    public void hookMethod(Class<?> clazz,
+                           String methodName,
+                           Object callback,
+                           Object... parameterTypes) {
+        try {
+            // 创建一个新的数组，长度为 parameterTypes 的长度加 1
+            Object[] parameterTypesAndCallback = new Object[parameterTypes.length + 1];
+
+            // 先将原来的 parameterTypes 数组复制到新的数组中
+            System.arraycopy(parameterTypes, 0, parameterTypesAndCallback, 0, parameterTypes.length);
+
+            // 将 callback 添加到新数组的最后一个位置
+            parameterTypesAndCallback[parameterTypes.length] = callback;
+
+            // 使用新的 parameterTypesAndCallback 调用 XposedHelpers.findAndHookMethod
             XposedHelpers.findAndHookMethod(
                     clazz,
                     methodName,
-                    parameterTypes,
-                    callback
+                    parameterTypesAndCallback
             );
         } catch (Exception e) {
             XposedBridge.log(e);
         }
     }
 
-    public void hookMethods(String className, ClassLoader classLoader, String methodName, XC_MethodHook xmh){
+
+    public void hookMethods(String className, ClassLoader classLoader, String methodName, XC_MethodHook xmh) {
         try {
             Class<?> clazz = XposedHelpers.findClass(className, classLoader);
-            for (Method method : clazz.getDeclaredMethods())
+            for (Method method : clazz.getDeclaredMethods()) {
                 if (method.getName().equals(methodName)
                         && !Modifier.isAbstract(method.getModifiers())
                         && Modifier.isPublic(method.getModifiers())) {
                     XposedBridge.hookMethod(method, xmh);
                 }
+            }
         } catch (Exception e) {
             XposedBridge.log(e);
         }
