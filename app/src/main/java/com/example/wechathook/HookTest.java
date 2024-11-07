@@ -4,7 +4,10 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.view.ViewGroup;
 import android.widget.BaseAdapter;
+import android.widget.ImageView;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.Toast;
@@ -24,11 +27,15 @@ import de.robv.android.xposed.XposedHelpers;
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam;
 
 public class HookTest implements IXposedHookLoadPackage {
+    ListAdapter NmA, NpN;
+    ImageView Nmz, NoX, NoY, NoZ, NmE ;
+    ListView.FixedViewInfo fixedViewInfo;
 
     @Override
     public void handleLoadPackage(final LoadPackageParam lpparam) throws Throwable {
         String pkgName = lpparam.packageName;
         LoadPackageParam loadPackageParam = lpparam;
+
         if (pkgName.equals("com.tencent.mm")) {
             Xposed.getInstance().hookMethod(
                     "com.tencent.mm.app.Application",
@@ -39,7 +46,7 @@ public class HookTest implements IXposedHookLoadPackage {
                         if (Wx.WX_APP_CONTEXT == null) {
                             Wx.WX_APP_CONTEXT = context;
                         }
-                        Wx.showToast(context.getPackageCodePath() + " Toast 注入成功");
+//                        Wx.showToast(context.getPackageCodePath() + " Toast 注入成功");
                     },
                     param -> {},
                     Context.class,
@@ -91,6 +98,7 @@ public class HookTest implements IXposedHookLoadPackage {
                         //过滤掉非聊天消息
                         if (!tableName.equals("message")) {
                             Wx.showToast("!tableName.equals(\"message\")");
+                            Wx.showToast("tableName:" + tableName);
                             return;
                         }
                         //打印出日志
@@ -149,6 +157,102 @@ public class HookTest implements IXposedHookLoadPackage {
                     String.class,
                     ContentValues.class,
                     int.class
+            );
+//            Xposed.getInstance().hookConstructor(
+//                    "com.tencent.mm.ui.conversation.MainUI",
+//                    lpparam.classLoader,
+//                    param->{},
+//                    param->{
+//                        Wx.showToast("After MainUI init()");
+//                        Object mainUI = param.thisObject;
+//                        NpN = (ListAdapter) XposedHelpers.getObjectField(mainUI, "NpN");
+//                    }
+//            );
+            Xposed.getInstance().hookMethod(
+                    "com.tencent.mm.ui.conversation.MainUI",
+                    lpparam.classLoader,
+                    "fZI",
+                    param->{},
+                    param->{
+                        Wx.showToast("After fZI()");
+                        Object mainUI = param.thisObject;
+                        NmA = (ListAdapter) XposedHelpers.getObjectField(mainUI, "NmA");
+                        NpN = ((ListView) XposedHelpers.getObjectField(mainUI, "NpN")).getAdapter();
+                        Xposed.getInstance().hookMethod(
+                                "com.tencent.mm.ui.conversation.MainUI",
+                                lpparam.classLoader,
+                                "onResume",
+                                param1->{
+                                    int count = NmA.getCount();
+                                    Wx.showToast("NmA listview has " + count + " child");
+                                    for (int i = 0; i < count; i++) {
+                                        Object item = NmA.getItem(i);
+//                                        Wx.showToast("NmA item data -> " + JSONObject.toJSONString(item));
+                                        XposedBridge.log("NmA item data -> " + JSONObject.toJSONString(item));
+                                    }
+                                    count = NpN.getCount();
+                                    Wx.showToast("NpN listview has " + count + " child");
+//                                    for (int i = 0; i < count; i++) {
+//                                        Object item = NpN.getItem(i);
+////                                        Wx.showToast("NpN item data -> " + JSONObject.toJSONString(item));
+////                                        XposedBridge.log("NpN item data -> " + JSONObject.toJSONString(item));
+//                                    }
+                                },
+                                param1->{}
+                        );
+                    }
+            );
+
+            Xposed.getInstance().hookMethod(
+                    "com.tencent.mm.ui.conversation.i",
+                    lpparam.classLoader,
+                    "getView",
+                    param->{},
+                    param-> {
+                        Wx.showToast("After getView");
+                        View view = (View) param.getResult();
+
+                        // 假设f实例被设置为View的tag
+                        Object fVar = view.getTag();
+
+                        // 获取fVar中的Nmz, NoX, NoY, NoZ字段
+                        // 我们需要知道这些字段的名称和类型
+                        Nmz = (ImageView) XposedHelpers.getObjectField(fVar, "Nmz");
+                        NoX = (ImageView) XposedHelpers.getObjectField(fVar, "NoX");
+                        NoY = (ImageView) XposedHelpers.getObjectField(fVar, "NoY");
+                        NoZ = (ImageView) XposedHelpers.getObjectField(fVar, "NoZ");
+                        Wx.showImageView(Nmz);
+                        Wx.showImageView(NoX);
+                        Wx.showImageView(NoY);
+                        Wx.showImageView(NoZ);
+                    },
+                    int.class,
+                    View.class,
+                    ViewGroup.class
+            );
+
+            Xposed.getInstance().hookMethod(
+                    "com.tencent.mm.ui.conversation.ConversationListView",
+                    lpparam.classLoader,
+                    "addHeaderView",
+                    param->{
+                        Wx.showToast("Before addHeaderView");
+                    },
+                    param-> {
+//                        Wx.showToast("After addHeaderView");
+//                        ListView.FixedViewInfo fixedViewInfo = ((ListView.FixedViewInfo) XposedHelpers.
+//                                getObjectField(param.thisObject, "fixedViewInfo")).getLast();
+//                        // 现在可以对fixedViewInfo对象进行操作
+//                        View view = fixedViewInfo.view;
+//                        Object data = fixedViewInfo.data;
+//                        boolean isSelectable = fixedViewInfo.isSelectable;
+//                        // 例如，打印出view的信息
+//                        Wx.showToast("HeaderView added: " + data.toString());
+//                        Wx.showViewInToast(view);
+                    },
+                    View.class,
+                    Object.class,
+                    boolean.class
             );
         }
     }

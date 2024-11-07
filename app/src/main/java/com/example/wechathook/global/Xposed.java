@@ -25,6 +25,38 @@ public class Xposed {
         return instance;
     }
 
+    public void hookConstructor(String className,
+                           ClassLoader classLoader,
+                           Consumer<XC_MethodHook.MethodHookParam> before,
+                           Consumer<XC_MethodHook.MethodHookParam> after,
+                           Object... parameterTypes) {
+        try {
+            Object[] parameterTypesAndCallback = new Object[parameterTypes.length + 1];
+
+            System.arraycopy(parameterTypes, 0, parameterTypesAndCallback, 0, parameterTypes.length);
+            Object callback = new XC_MethodHook() {
+                @Override
+                protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                    super.beforeHookedMethod(param);
+                    before.accept(param);
+                }
+
+                @Override
+                protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+                    super.afterHookedMethod(param);
+                    after.accept(param);
+                }
+            };
+
+            parameterTypesAndCallback[parameterTypes.length] = callback;
+            XposedHelpers.findAndHookConstructor(className, classLoader, parameterTypesAndCallback);
+
+        } catch (Exception e) {
+            XposedBridge.log(e);
+        }
+
+    }
+
     public void hookMethod(String className,
                            ClassLoader classLoader,
                            String methodName,
@@ -70,16 +102,12 @@ public class Xposed {
                            Object callback,
                            Object... parameterTypes) {
         try {
-            // 创建一个新的数组，长度为 parameterTypes 的长度加 1
             Object[] parameterTypesAndCallback = new Object[parameterTypes.length + 1];
 
-            // 先将原来的 parameterTypes 数组复制到新的数组中
             System.arraycopy(parameterTypes, 0, parameterTypesAndCallback, 0, parameterTypes.length);
 
-            // 将 callback 添加到新数组的最后一个位置
             parameterTypesAndCallback[parameterTypes.length] = callback;
 
-            // 使用新的 parameterTypesAndCallback 调用 XposedHelpers.findAndHookMethod
             XposedHelpers.findAndHookMethod(
                     clazz,
                     methodName,

@@ -13,5 +13,6 @@ public class GlobalMem {
         return instance;
     }
 
-    public static final String TAG = "LAB_SUHY_WECHATHOOK";
+//    public static final String TAG = "LAB_SUHY_WECHATHOOK";
+    public static final String TAG = "LSPosed-Bridge";
 }
