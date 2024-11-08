@@ -1,5 +1,6 @@
 package com.example.wechathook.global;
 
+import android.app.AlertDialog;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -14,6 +15,7 @@ import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import com.example.wechathook.R;
@@ -89,37 +91,24 @@ public class Wx {
         }
     }
 
-    public static void showViewInToast(View customView) {
-        // 确保 WX_APP_CONTEXT 是一个有效的 Context 对象
-        if (WX_APP_CONTEXT != null && customView != null) {
-            Context context = WX_APP_CONTEXT;
+    public static void showViewInToast(Context context, View view) {
+        Toast toast = new Toast(context);
+        toast.setDuration(Toast.LENGTH_LONG);
+        toast.setGravity(Gravity.CENTER, 0, 0);
 
-            // 创建一个 Toast 对象
-            Toast toast = new Toast(context);
-            // 设置 Toast 的显示时长
-            toast.setDuration(Toast.LENGTH_LONG);
-            // 设置 Toast 的位置
-            toast.setGravity(Gravity.CENTER, 0, 0);
+        // 创建一个容器布局，用于包含自定义View
+        LinearLayout container = new LinearLayout(context);
+        container.setLayoutParams(new ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT));
+        container.setGravity(Gravity.CENTER);
 
-            // 创建一个容器 View，用于包含自定义 View
-            FrameLayout container = new FrameLayout(context);
-            // 设置容器 View 的布局参数
-            ViewGroup.LayoutParams layoutParams = new ViewGroup.LayoutParams(
-                    ViewGroup.LayoutParams.WRAP_CONTENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT);
-            container.setLayoutParams(layoutParams);
+        // 将自定义View添加到容器布局中
+        container.addView(view);
 
-            // 将自定义 View 添加到容器 View 中
-            container.addView(customView);
-
-            // 将容器 View 设置为 Toast 的内容视图
-            toast.setView(container);
-
-            // 显示 Toast
-            toast.show();
-        } else {
-            Log.i(GlobalMem.TAG, "ERR, APP CONTEXT IS NULL");
-        }
+        // 将容器布局设置为Toast的内容视图
+        toast.setView(container);
+        toast.show();
     }
 
     public static void showViewAsWindow(View view) {
@@ -135,5 +124,13 @@ public class Wx {
         params.gravity = Gravity.CENTER;
 
         windowManager.addView(view, params);
+    }
+
+    public static void showViewInDialog(Context context, View view) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        builder.setView(view);
+        builder.setCancelable(true);
+        AlertDialog dialog = builder.create();
+        dialog.show();
     }
 }

@@ -118,7 +118,6 @@ public class Xposed {
         }
     }
 
-
     public void hookMethods(String className, ClassLoader classLoader, String methodName, XC_MethodHook xmh) {
         try {
             Class<?> clazz = XposedHelpers.findClass(className, classLoader);
@@ -132,5 +131,9 @@ public class Xposed {
         } catch (Exception e) {
             XposedBridge.log(e);
         }
+    }
+
+    public void log(String msg) {
+        XposedBridge.log(msg);
     }
 }
