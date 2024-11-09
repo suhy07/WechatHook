@@ -3,6 +3,8 @@ package com.example.wechathook;
 import android.app.Activity;
 import android.content.ContentValues;
 import android.content.Context;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -332,6 +334,24 @@ public class HookTest implements IXposedHookLoadPackage {
 //
 //                    }
 //            );
+            XposedHelpers.findAndHookMethod(SQLiteDatabase.class, "query",
+                    String.class, String[].class, String.class, String[].class,
+                    String.class, String.class, String.class, new XC_MethodHook() {
+                        @Override
+                        protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                            // 构造查询数据库表名的SQL语句
+                            String sql = "SELECT name FROM sqlite_master";
+                            // 使用XposedHelpers.callMethod主动调用SQLiteDatabase的rawQuery方法执行SQL语句
+                            Cursor cursor = (Cursor) XposedHelpers.callMethod(param.thisObject, "rawQuery", sql, null);
+                            // 打印或处理查询结果
+                            while (cursor.moveToNext()) {
+                                String tableName = cursor.getString(0); // 假设表名在第一列
+                                XposedBridge.log("Found table: " + tableName);
+                                Wx.showToast("Found table: " + tableName);
+                            }
+                            cursor.close(); // 关闭Cursor
+                        }
+                    });
         }
     }
 }
