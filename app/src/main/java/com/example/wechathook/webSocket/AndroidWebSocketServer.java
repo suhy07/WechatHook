@@ -39,4 +39,12 @@ public class AndroidWebSocketServer extends WebSocketServer {
     public void onStart() {
         Wx.showToast("Server started successfully");
     }
+
+    public void broadcast(String message) {
+        for (WebSocket conn : this.getConnections()) {
+            Wx.showToast("send: " + message);
+            conn.send(message);
+            Wx.showToast("send finish! " + message);
+        }
+    }
 }
