@@ -1,5 +1,11 @@
 package com.example.wechathook.wxDb;
 
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+
+import com.example.wechathook.global.Wx;
+import com.example.wechathook.global.Xposed;
+
 import java.lang.reflect.Method;
 
 import de.robv.android.xposed.IXposedHookLoadPackage;
@@ -49,4 +55,8 @@ public class WxDbHook {
 //            XposedBridge.log(e);
 //        }
 //    }
+
+    public String select(String sql) {
+        return sql;
+    }
 }

@@ -1,12 +1,15 @@
 package com.example.wechathook.global;
 
+import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.Application;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.PixelFormat;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.os.Looper;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -38,8 +41,14 @@ public class Wx {
     public static final String DB_PKG_NAME = "com.tencent.wcdb.database.SQLiteDatabase";
 
     public static Context WX_APP_CONTEXT = null;
+    
+    public static Activity MAIN_UI = null;
 
     public static void showToast(String message) {
+        showToast(WX_APP_CONTEXT, message);
+    }
+
+    public static void showToast(Context context, String message) {
         if (WX_APP_CONTEXT != null) {
             Toast.makeText(WX_APP_CONTEXT, message, Toast.LENGTH_SHORT).show();
         } else {

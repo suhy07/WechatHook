@@ -22,8 +22,10 @@ import com.example.wechathook.global.Wx;
 import com.example.wechathook.global.Xposed;
 
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 
@@ -38,12 +40,15 @@ public class HookTest implements IXposedHookLoadPackage {
     ImageView Nmz, NoX, NoY, NoZ, NmE ;
     ListView.FixedViewInfo fixedViewInfo;
     Set<View> views = new HashSet<>();
-
+    Object sqliteDatabase;
+    Set<Object> sqliteDatabases = new HashSet<>();
+    Cursor queryCursor, rawQueryCursor;
+    XC_MethodHook.MethodHookParam queryParam, rawQueryParam;
     @Override
     public void handleLoadPackage(final LoadPackageParam lpparam) throws Throwable {
         String pkgName = lpparam.packageName;
         LoadPackageParam loadPackageParam = lpparam;
-
+        String tmpTableName = "rcontact";
         if (pkgName.equals("com.tencent.mm")) {
             Xposed.getInstance().hookMethod(
                     "com.tencent.mm.app.Application",
@@ -63,32 +68,32 @@ public class HookTest implements IXposedHookLoadPackage {
             );
 
             // Hook setAdapter method
-            Xposed.getInstance().hookMethod(
-                    "com.tencent.mm.ui.chatting.view.MMChattingListView",
-                    lpparam.classLoader,
-                    "setAdapter",
-                    param -> {
-                        ListAdapter adapter = (ListAdapter) param.args[0];
-                        Xposed.getInstance().hookMethod(
-                                "com.tencent.mm.ui.chatting.ChattingUIFragment",
-                                lpparam.classLoader,
-                                "doResume",
-                                param1 -> {
-                                    // 在这里处理doResume的逻辑
-                                    int count = adapter.getCount();
-                                    Wx.showToast("listview has " + count + " child");
-                                    for (int i = 0; i < count; i++) {
-                                        Object item = adapter.getItem(i);
-//                                        Wx.showToast("item data -> " + JSONObject.toJSONString(item));
-                                        XposedBridge.log("item data -> " + JSONObject.toJSONString(item));
-                                    }
-                                },
-                                param1 -> {}
-                        );
-                    },
-                    param -> {},
-                    BaseAdapter.class
-            );
+//            Xposed.getInstance().hookMethod(
+//                    "com.tencent.mm.ui.chatting.view.MMChattingListView",
+//                    lpparam.classLoader,
+//                    "setAdapter",
+//                    param -> {
+//                        ListAdapter adapter = (ListAdapter) param.args[0];
+//                        Xposed.getInstance().hookMethod(
+//                                "com.tencent.mm.ui.chatting.ChattingUIFragment",
+//                                lpparam.classLoader,
+//                                "doResume",
+//                                param1 -> {
+//                                    // 在这里处理doResume的逻辑
+//                                    int count = adapter.getCount();
+//                                    Wx.showToast("listview has " + count + " child");
+//                                    for (int i = 0; i < count; i++) {
+//                                        Object item = adapter.getItem(i);
+////                                        Wx.showToast("item data -> " + JSONObject.toJSONString(item));
+//                                        XposedBridge.log("item data -> " + JSONObject.toJSONString(item));
+//                                    }
+//                                },
+//                                param1 -> {}
+//                        );
+//                    },
+//                    param -> {},
+//                    BaseAdapter.class
+//            );
 //            Class<?> classDb = XposedHelpers.findClassIfExists(Wx.DB_PKG_NAME, lpparam.classLoader);
 //            Xposed.getInstance().hookMethod(
 //                    classDb,
@@ -176,63 +181,86 @@ public class HookTest implements IXposedHookLoadPackage {
 //                        NpN = (ListAdapter) XposedHelpers.getObjectField(mainUI, "NpN");
 //                    }
 //            );
-            Xposed.getInstance().hookMethod(
-                    "com.tencent.mm.ui.conversation.MainUI",
-                    lpparam.classLoader,
-                    "fZI",
-                    param->{},
-                    param->{
-                        Wx.showToast("After fZI()");
-                        Object mainUI = param.thisObject;
-                        NmA = (ListAdapter) XposedHelpers.getObjectField(mainUI, "NmA");
-                        NpN = ((ListView) XposedHelpers.getObjectField(mainUI, "NpN")).getAdapter();
-                        Xposed.getInstance().hookMethod(
-                                "com.tencent.mm.ui.conversation.MainUI",
-                                lpparam.classLoader,
-                                "onResume",
-                                param1->{
-                                    int count = NmA.getCount();
-                                    Wx.showToast("NmA listview has " + count + " child");
-                                    for (int i = 0; i < count; i++) {
-                                        Object item = NmA.getItem(i);
-//                                        Wx.showToast("NmA item data -> " + JSONObject.toJSONString(item));
-                                        XposedBridge.log("NmA item data -> " + JSONObject.toJSONString(item));
-                                    }
-//                                    count = NpN.getCount();
-//                                    Wx.showToast("NpN listview has " + count + " child");
-//                                    for (int i = 0; i < count; i++) {
-//                                        Object item = NpN.getItem(i);
-////                                        Wx.showToast("NpN item data -> " + JSONObject.toJSONString(item));
-//                                        XposedBridge.log("NpN item data -> " + JSONObject.toJSONString(item));
-//                                    }
-                                },
-                                param1->{}
-                        );
-                    }
-            );
-
 //            Xposed.getInstance().hookMethod(
 //                    "com.tencent.mm.ui.conversation.MainUI",
 //                    lpparam.classLoader,
-//                    "onResume",
+//                    "fZI",
 //                    param->{},
 //                    param->{
-////                        Wx.showToast("After MainUI onResume");
+//                        Wx.showToast("After fZI()");
 //                        Object mainUI = param.thisObject;
-//                        // 获取Context对象
-//                        Context context = (Context) XposedHelpers.callMethod(mainUI, "getContext");
-//                        Activity activity = (Activity) XposedHelpers.callMethod(mainUI, "getActivity");
-//                        // 打印Context信息，您可以在这里进行其他操作
-////                        Wx.showToast("获取到Context: " + context);
-////                        Wx.showToast("获取到Activity: " + activity);
-//                        for (View view: views) {
-//                            if (view != null) {
-////                                Wx.showViewInToast(context, view);
-////                                Wx.showViewInDialog(activity, view);
-//                            }
-//                        }
+//                        NmA = (ListAdapter) XposedHelpers.getObjectField(mainUI, "NmA");
+//                        NpN = ((ListView) XposedHelpers.getObjectField(mainUI, "NpN")).getAdapter();
+//                        Xposed.getInstance().hookMethod(
+//                                "com.tencent.mm.ui.conversation.MainUI",
+//                                lpparam.classLoader,
+//                                "onResume",
+//                                param1->{
+//                                    int count = NmA.getCount();
+//                                    Wx.showToast("NmA listview has " + count + " child");
+//                                    for (int i = 0; i < count; i++) {
+//                                        Object item = NmA.getItem(i);
+////                                        Wx.showToast("NmA item data -> " + JSONObject.toJSONString(item));
+//                                        XposedBridge.log("NmA item data -> " + JSONObject.toJSONString(item));
+//                                    }
+////                                    count = NpN.getCount();
+////                                    Wx.showToast("NpN listview has " + count + " child");
+////                                    for (int i = 0; i < count; i++) {
+////                                        Object item = NpN.getItem(i);
+//////                                        Wx.showToast("NpN item data -> " + JSONObject.toJSONString(item));
+////                                        XposedBridge.log("NpN item data -> " + JSONObject.toJSONString(item));
+////                                    }
+//                                },
+//                                param1->{}
+//                        );
 //                    }
 //            );
+
+            Xposed.getInstance().hookMethod(
+                    "com.tencent.mm.ui.conversation.MainUI",
+                    lpparam.classLoader,
+                    "onResume",
+                    param->{},
+                    param->{
+                        Wx.showToast("After MainUI onResume");
+                        Wx.MAIN_UI = (Activity) XposedHelpers.callMethod(param.thisObject, "getActivity");
+                        if (Wx.MAIN_UI != null) {
+                            Wx.MAIN_UI.runOnUiThread(() -> {
+                                if (sqliteDatabase != null && rawQueryParam != null) {
+//                                    // 首先查询表结构，获取列名
+//                                    String tableInfoQuery = "PRAGMA table_info(" + tmpTableName + ")";
+//
+//                                    // 执行表结构查询
+//                                    Cursor tableInfoCursor = (Cursor) XposedHelpers.callMethod(sqliteDatabase, "rawQuery", tableInfoQuery, null);
+//                                    String[] columnNames = getColumnNames(tableInfoCursor);
+//                                    Xposed.getInstance().log(Arrays.toString(columnNames));
+//                                    // 然后查询整个表的数据
+//                                    String dataQuery = "SELECT * FROM " + tmpTableName;
+//
+//                                    // 执行数据查询
+//                                    Cursor dataCursor = (Cursor) XposedHelpers.callMethod(sqliteDatabase, "rawQuery", dataQuery, null);
+//                                    queryTable(columnNames, dataCursor); // 使用获取的列名来查询数据
+//                                    tableInfoCursor.close();
+//                                    dataCursor.close();
+//                                    queryParam.args[0] = dataQuery;
+//                                    Cursor dataCursor1 = (Cursor) XposedHelpers.callMethod(sqliteDatabase, "query", queryParam.args);
+//                                    queryTable(columnNames, dataCursor1); // 使用获取的列名来查询数据
+//                                    dataCursor1.close();
+//                            // 构造查询数据库表名的SQL语句
+//                            String sql = "SELECT name FROM sqlite_master";
+                            // 使用XposedHelpers.callMethod主动调用SQLiteDatabase的rawQuery方法执行SQL语句
+                            Cursor cursor = (Cursor) XposedHelpers.callMethod(sqliteDatabase, "rawQuery", sql, null);
+                            // 打印或处理查询结果
+                            while (cursor.moveToNext()) {
+                                String tableName = cursor.getString(0); // 假设表名在第一列
+                                XposedBridge.log("Found table: " + tableName);
+                            }
+                            cursor.close(); // 关闭Cursor
+                                }
+                            });
+                        }
+                    }
+            );
 
 //            Xposed.getInstance().hookMethod(
 //                    "com.tencent.mm.ui.conversation.i",
@@ -334,24 +362,193 @@ public class HookTest implements IXposedHookLoadPackage {
 //
 //                    }
 //            );
-            XposedHelpers.findAndHookMethod(SQLiteDatabase.class, "query",
-                    String.class, String[].class, String.class, String[].class,
-                    String.class, String.class, String.class, new XC_MethodHook() {
+//            // 找到 SQLiteDatabase 类
+//            Class<?> sqliteDatabaseClass = XposedHelpers.findClass("com.tencent.wcdb.database.SQLiteDatabase", lpparam.classLoader);
+//
+//            // Hook query 方法
+//            XposedHelpers.findAndHookMethod(
+//                    sqliteDatabaseClass,
+//                    "query",
+//                    boolean.class,
+//                    String.class,
+//                    String[].class,
+//                    String.class,
+//                    Object[].class,
+//                    String.class,
+//                    String.class,
+//                    String.class,
+//                    String.class,
+//                    new XC_MethodHook() {
+//                        @Override
+//                        protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+//                            // 获取原始 SQL 查询语句
+//                            String originalQuery = (String) param.args[0];  // SQL 查询字符串
+//
+//                            // 在这里替换您的 SQL 查询
+//                            String newQuery = "SELECT * FROM your_table WHERE your_condition = 1"; // 自定义 SQL
+//
+//                            // 替换原始 SQL 查询
+//                            param.args[0] = newQuery;
+//
+//                            // 输出替换的 SQL
+//                            XposedBridge.log("Original SQL: " + originalQuery);
+//                            XposedBridge.log("Modified SQL: " + newQuery);
+//                        }
+//                    }
+//            );
+
+//            // Hook rawQuery 方法
+//            XposedHelpers.findAndHookMethod(
+//                    sqliteDatabaseClass,
+//                    "rawQuery",
+//                    String.class,
+//                    Object[].class,
+//                    new XC_MethodHook() {
+//                        @Override
+//                        protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+//                            // 获取原始 SQL 查询语句
+//                            String originalQuery = (String) param.args[0];  // SQL 查询字符串
+//
+//                            // 在这里替换您的 SQL 查询
+//                            String newQuery = "SELECT * FROM your_table WHERE your_condition = 1"; // 自定义 SQL
+//
+//                            // 替换原始 SQL 查询
+//                            param.args[0] = newQuery;
+//
+//                            // 输出替换的 SQL
+//                            XposedBridge.log("Original SQL: " + originalQuery);
+//                            XposedBridge.log("Modified SQL: " + newQuery);
+//                        }
+//                    }
+//            );
+
+//// Hook 微信的 `MainUI` 类中的一个方法
+//            XposedHelpers.findAndHookMethod(
+//                    "com.tencent.mm.ui.conversation.MainUI",
+//                    lpparam.classLoader,
+//                    "fZI",  // 假设该方法存在并会被触发
+//                    new XC_MethodHook() {
+//                        @Override
+//                        protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+//                            // 使用 MMApplicationContext.getContext() 获取全局 Context
+//                            Class<?> mmAppContextClass = XposedHelpers.findClass("com.tencent.mm.sdk.platformtools.MMApplicationContext", lpparam.classLoader);
+//                            Context context = (Context) XposedHelpers.callStaticMethod(mmAppContextClass, "getContext");
+//
+//                            if (context == null) {
+//                                XposedBridge.log("获取 Context 失败");
+//                                return;
+//                            }
+//
+//                            // 调用 `getWXUin`
+//                            String uin = (String) XposedHelpers.callStaticMethod(
+//                                    XposedHelpers.findClass("com.tencent.recovery.wx.util.WXUtil", lpparam.classLoader),
+//                                    "getWXUin",
+//                                    context
+//                            );
+//                            Wx.showToast("微信 UIN (主动触发): " + uin);
+//
+//                            // 调用 `getWXUserName`
+//                            String username = (String) XposedHelpers.callStaticMethod(
+//                                    XposedHelpers.findClass("com.tencent.recovery.wx.util.WXUtil", lpparam.classLoader),
+//                                    "getWXUserName",
+//                                    context
+//                            );
+//                            Wx.showToast("微信用户名 (主动触发): " + username);
+//                        }
+//                    }
+//            );
+//
+            Class<?> sqliteDatabaseClass = XposedHelpers.findClass("com.tencent.wcdb.database.SQLiteDatabase", lpparam.classLoader);
+            // Hook query 方法
+            XposedHelpers.findAndHookMethod(
+                    sqliteDatabaseClass,
+                    "query",
+                    boolean.class,
+                    String.class,
+                    String[].class,
+                    String.class,
+                    Object[].class,
+                    String.class,
+                    String.class,
+                    String.class,
+                    String.class,
+                    new XC_MethodHook() {
                         @Override
                         protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
-                            // 构造查询数据库表名的SQL语句
-                            String sql = "SELECT name FROM sqlite_master";
-                            // 使用XposedHelpers.callMethod主动调用SQLiteDatabase的rawQuery方法执行SQL语句
-                            Cursor cursor = (Cursor) XposedHelpers.callMethod(param.thisObject, "rawQuery", sql, null);
-                            // 打印或处理查询结果
-                            while (cursor.moveToNext()) {
-                                String tableName = cursor.getString(0); // 假设表名在第一列
-                                XposedBridge.log("Found table: " + tableName);
-                                Wx.showToast("Found table: " + tableName);
-                            }
-                            cursor.close(); // 关闭Cursor
+                            // 获取原始 SQL 查询语句
+                            String originalQuery = (String) param.args[0];  // SQL 查询字符串
+                            queryParam = param;
                         }
-                    });
+
+                        @Override
+                        protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+                            // 可以在此处处理返回结果
+                            Cursor cursor = (Cursor) param.getResult();
+                        }
+                    }
+            );
+
+            // Hook rawQuery 方法
+            XposedHelpers.findAndHookMethod(
+                    sqliteDatabaseClass,
+                    "rawQuery",
+                    String.class,
+                    Object[].class,
+                    new XC_MethodHook() {
+                        @Override
+                        protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                            // 获取原始 SQL 查询语句
+                            String originalQuery = (String) param.args[0];  // SQL 查询字符串
+                            rawQueryParam = param;
+                            sqliteDatabase = param.thisObject;
+//                            Xposed.getInstance().log(originalQuery);
+                        }
+
+                        @Override
+                        protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+                            // 可以在此处处理返回结果
+                            rawQueryCursor = (Cursor) param.getResult();
+                        }
+                    }
+            );
+        }
+    }
+    // 从 Cursor 中提取列名
+    private String[] getColumnNames(Cursor cursor) {
+        if (cursor == null || !cursor.moveToFirst()) {
+            return new String[0];
+        }
+
+        int columnCount = cursor.getColumnCount();
+        String[] columnNames = new String[columnCount];
+
+        // 获取所有列名
+        for (int i = 0; i < columnCount; i++) {
+            columnNames[i] = cursor.getColumnName(i);
+        }
+        return columnNames;
+    }
+
+    // 提取的查询方法，用于处理查询结果
+    private void queryTable(String[] columnNames, Cursor cursor) {
+        Xposed.getInstance().log("queryTable Cursor: " + cursor);
+        if (cursor != null && cursor.moveToFirst()) {
+            Xposed.getInstance().log("cursor != null && cursor.moveToFirst()");
+            do {
+                // 根据列名动态读取每一行的数据
+//                StringBuilder row = new StringBuilder();
+                for (String columnName : columnNames) {
+                    int columnIndex = cursor.getColumnIndex(columnName);
+                    Xposed.getInstance().log("columnName: " + columnName);
+                    if (columnIndex != -1) {
+                        String value = cursor.getString(columnIndex);  // 获取每列的值
+                        Xposed.getInstance().log("columnName: " + columnName + " value: " + value);
+//                        row.append(columnName).append(": ").append(value).append(" | ");
+                    }
+                }
+//                Xposed.getInstance().log("Row: " + row.toString());  // 打印每行数据
+
+            } while (cursor.moveToNext());
         }
     }
 }
