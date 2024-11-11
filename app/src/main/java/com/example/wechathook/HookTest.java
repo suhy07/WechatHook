@@ -41,7 +41,7 @@ public class HookTest implements IXposedHookLoadPackage {
     ListView.FixedViewInfo fixedViewInfo;
     Set<View> views = new HashSet<>();
     Object sqliteDatabase;
-    Set<Object> sqliteDatabases = new HashSet<>();
+    static Set<Object> sqliteDatabases = new HashSet<>();
     Cursor queryCursor, rawQueryCursor;
     XC_MethodHook.MethodHookParam queryParam, rawQueryParam;
     @Override
@@ -216,51 +216,83 @@ public class HookTest implements IXposedHookLoadPackage {
 //                    }
 //            );
 
-            Xposed.getInstance().hookMethod(
-                    "com.tencent.mm.ui.conversation.MainUI",
+            Class<?> sqliteDatabaseClass = XposedHelpers.findClass("android.database.sqlite.SQLiteDatabase", lpparam.classLoader);
+            Class<?> cursorFactory = XposedHelpers.findClass("android.database.sqlite.SQLiteDatabase.CursorFactory", lpparam.classLoader);
+
+            // Hook openDatabase 方法，签名为 (String, CursorFactory, int)
+            XposedHelpers.findAndHookMethod(
+                    "android.database.sqlite.SQLiteDatabase",
                     lpparam.classLoader,
-                    "onResume",
-                    param->{},
-                    param->{
-                        Wx.showToast("After MainUI onResume");
-                        Wx.MAIN_UI = (Activity) XposedHelpers.callMethod(param.thisObject, "getActivity");
-                        if (Wx.MAIN_UI != null) {
-                            Wx.MAIN_UI.runOnUiThread(() -> {
-                                if (sqliteDatabase != null && rawQueryParam != null) {
-//                                    // 首先查询表结构，获取列名
-//                                    String tableInfoQuery = "PRAGMA table_info(" + tmpTableName + ")";
-//
-//                                    // 执行表结构查询
-//                                    Cursor tableInfoCursor = (Cursor) XposedHelpers.callMethod(sqliteDatabase, "rawQuery", tableInfoQuery, null);
-//                                    String[] columnNames = getColumnNames(tableInfoCursor);
-//                                    Xposed.getInstance().log(Arrays.toString(columnNames));
-//                                    // 然后查询整个表的数据
-//                                    String dataQuery = "SELECT * FROM " + tmpTableName;
-//
-//                                    // 执行数据查询
-//                                    Cursor dataCursor = (Cursor) XposedHelpers.callMethod(sqliteDatabase, "rawQuery", dataQuery, null);
-//                                    queryTable(columnNames, dataCursor); // 使用获取的列名来查询数据
-//                                    tableInfoCursor.close();
-//                                    dataCursor.close();
-//                                    queryParam.args[0] = dataQuery;
-//                                    Cursor dataCursor1 = (Cursor) XposedHelpers.callMethod(sqliteDatabase, "query", queryParam.args);
-//                                    queryTable(columnNames, dataCursor1); // 使用获取的列名来查询数据
-//                                    dataCursor1.close();
-//                            // 构造查询数据库表名的SQL语句
-//                            String sql = "SELECT name FROM sqlite_master";
-                            // 使用XposedHelpers.callMethod主动调用SQLiteDatabase的rawQuery方法执行SQL语句
-                            Cursor cursor = (Cursor) XposedHelpers.callMethod(sqliteDatabase, "rawQuery", sql, null);
-                            // 打印或处理查询结果
-                            while (cursor.moveToNext()) {
-                                String tableName = cursor.getString(0); // 假设表名在第一列
-                                XposedBridge.log("Found table: " + tableName);
+                    "openDatabase",
+                    String.class, cursorFactory, int.class,
+                    new XC_MethodHook() {
+
+                        @Override
+                        protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                            // 获取 openDatabase 方法的参数
+                            String dbPath = (String) param.args[0];
+                            int flags = (int) param.args[2];
+                            XposedBridge.log("openDatabase called with dbPath: " + dbPath + " flags: " + flags);
+                        }
+
+                        @Override
+                        protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+                            // 获取返回的 SQLiteDatabase 对象
+                            SQLiteDatabase db = (SQLiteDatabase) param.getResult();
+                            if (db != null) {
+                                // 将打开的 SQLiteDatabase 对象添加到集合中
+                                sqliteDatabases.add(db);
+                                XposedBridge.log("SQLiteDatabase object added to set: " + db);
                             }
-                            cursor.close(); // 关闭Cursor
-                                }
-                            });
                         }
                     }
             );
+
+//            Xposed.getInstance().hookMethod(
+//                    "com.tencent.mm.ui.conversation.MainUI",
+//                    lpparam.classLoader,
+//                    "onResume",
+//                    param->{},
+//                    param->{
+//                        Wx.showToast("After MainUI onResume");
+//                        Wx.MAIN_UI = (Activity) XposedHelpers.callMethod(param.thisObject, "getActivity");
+//                        if (Wx.MAIN_UI != null) {
+//                            Wx.MAIN_UI.runOnUiThread(() -> {
+//                                if (sqliteDatabase != null && rawQueryParam != null) {
+////                                    // 首先查询表结构，获取列名
+////                                    String tableInfoQuery = "PRAGMA table_info(" + tmpTableName + ")";
+////
+////                                    // 执行表结构查询
+////                                    Cursor tableInfoCursor = (Cursor) XposedHelpers.callMethod(sqliteDatabase, "rawQuery", tableInfoQuery, null);
+////                                    String[] columnNames = getColumnNames(tableInfoCursor);
+////                                    Xposed.getInstance().log(Arrays.toString(columnNames));
+////                                    // 然后查询整个表的数据
+////                                    String dataQuery = "SELECT * FROM " + tmpTableName;
+////
+////                                    // 执行数据查询
+////                                    Cursor dataCursor = (Cursor) XposedHelpers.callMethod(sqliteDatabase, "rawQuery", dataQuery, null);
+////                                    queryTable(columnNames, dataCursor); // 使用获取的列名来查询数据
+////                                    tableInfoCursor.close();
+////                                    dataCursor.close();
+////                                    queryParam.args[0] = dataQuery;
+////                                    Cursor dataCursor1 = (Cursor) XposedHelpers.callMethod(sqliteDatabase, "query", queryParam.args);
+////                                    queryTable(columnNames, dataCursor1); // 使用获取的列名来查询数据
+////                                    dataCursor1.close();
+////                            // 构造查询数据库表名的SQL语句
+////                            String sql = "SELECT name FROM sqlite_master";
+//                            // 使用XposedHelpers.callMethod主动调用SQLiteDatabase的rawQuery方法执行SQL语句
+//                            Cursor cursor = (Cursor) XposedHelpers.callMethod(sqliteDatabase, "rawQuery", sql, null);
+//                            // 打印或处理查询结果
+//                            while (cursor.moveToNext()) {
+//                                String tableName = cursor.getString(0); // 假设表名在第一列
+//                                XposedBridge.log("Found table: " + tableName);
+//                            }
+//                            cursor.close(); // 关闭Cursor
+//                                }
+//                            });
+//                        }
+//                    }
+//            );
 
 //            Xposed.getInstance().hookMethod(
 //                    "com.tencent.mm.ui.conversation.i",
@@ -458,7 +490,7 @@ public class HookTest implements IXposedHookLoadPackage {
 //                    }
 //            );
 //
-            Class<?> sqliteDatabaseClass = XposedHelpers.findClass("com.tencent.wcdb.database.SQLiteDatabase", lpparam.classLoader);
+//            Class<?> sqliteDatabaseClass = XposedHelpers.findClass("com.tencent.wcdb.database.SQLiteDatabase", lpparam.classLoader);
             // Hook query 方法
             XposedHelpers.findAndHookMethod(
                     sqliteDatabaseClass,
